@@ -42,9 +42,12 @@ struct clk_stm32_priv {
 	const struct mux_cfg *muxes;
 	const uint32_t nb_muxes;
 	const struct gate_cfg *gates;
+	uint8_t *gate_cpt;
 	const uint32_t nb_gates;
 	const struct div_cfg *div;
 	const uint32_t nb_div;
+	bool clk_ignore_unused;
+	bool (*is_ignore_unused)(struct clk *clk);
 	bool (*is_critical)(struct clk *clk);
 	void *pdata;
 };
@@ -128,7 +131,7 @@ TEE_Result stm32_div_set_rate(int div_id, unsigned long rate,
 uint32_t stm32_div_get_value(int div_id);
 TEE_Result stm32_div_set_value(uint32_t div_id, uint32_t value);
 
-int clk_stm32_parse_fdt_by_name(const void *fdt, int node, const char *name,
+int fdt_clk_stm32_parse_by_name(const void *fdt, int node, const char *name,
 				uint32_t *tab, uint32_t *nb);
 
 unsigned long clk_stm32_divider_get_rate(struct clk *clk,
@@ -146,6 +149,7 @@ TEE_Result clk_stm32_composite_set_rate(struct clk *clk, unsigned long rate,
 					unsigned long parent_rate);
 TEE_Result clk_stm32_composite_gate_enable(struct clk *clk);
 void clk_stm32_composite_gate_disable(struct clk *clk);
+bool clk_stm32_composite_gate_is_enabled(struct clk *clk);
 
 TEE_Result clk_stm32_set_parent_by_index(struct clk *clk, size_t pidx);
 
@@ -253,5 +257,7 @@ TEE_Result clk_stm32_init(struct clk_stm32_priv *priv, uintptr_t base);
 
 void stm32mp_clk_provider_probe_final(const void *fdt, int node,
 				      struct clk_stm32_priv *priv);
+
+void clk_stm32_clock_ignore_unused(void);
 
 #endif /* CLK_STM32_CORE_H */

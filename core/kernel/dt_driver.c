@@ -2,8 +2,7 @@
 /*
  * Copyright (c) 2021, Linaro Limited
  * Copyright (c) 2021, Bootlin
- * Copyright (c) 2021, Linaro Limited
- * Copyright (c) 2021, STMicroelectronics
+ * Copyright (c) 2022, STMicroelectronics
  */
 
 #include <assert.h>
@@ -106,6 +105,9 @@ static void assert_type_is_valid(enum dt_driver_type type)
 	case DT_DRIVER_CLK:
 	case DT_DRIVER_RSTCTRL:
 	case DT_DRIVER_UART:
+	case DT_DRIVER_PINCTRL:
+	case DT_DRIVER_I2C:
+	case DT_DRIVER_ADC:
 		return;
 	default:
 		assert(0);
@@ -125,20 +127,41 @@ TEE_Result dt_driver_register_provider(const void *fdt, int nodeoffset,
 	uint32_t phandle = 0;
 
 	assert_type_is_valid(type);
+	switch (type) {
+	case DT_DRIVER_CLK:
+	case DT_DRIVER_ADC:
+	case DT_DRIVER_RSTCTRL:
+		provider_cells = fdt_get_dt_driver_cells(fdt, nodeoffset, type);
+		if (provider_cells < 0) {
+			DMSG("Failed to find provider cells: %d",
+			     provider_cells);
+			return TEE_ERROR_GENERIC;
+		}
 
-	provider_cells = fdt_get_dt_driver_cells(fdt, nodeoffset, type);
-	if (provider_cells < 0) {
-		DMSG("Failed to find provider cells: %d", provider_cells);
-		return TEE_ERROR_GENERIC;
-	}
+		phandle = fdt_get_phandle(fdt, nodeoffset);
+		if (!phandle)
+			return TEE_SUCCESS;
 
-	phandle = fdt_get_phandle(fdt, nodeoffset);
-	if (!phandle)
-		return TEE_SUCCESS;
+		if (phandle == (uint32_t)-1) {
+			DMSG("Failed to find provide phandle");
+			return TEE_ERROR_GENERIC;
+		}
+		break;
+	case DT_DRIVER_PINCTRL:
+		phandle = fdt_get_phandle(fdt, nodeoffset);
+		if (!phandle)
+			return TEE_SUCCESS;
 
-	if (phandle == (uint32_t)-1) {
-		DMSG("Failed to find provide phandle");
-		return TEE_ERROR_GENERIC;
+		if (phandle == (uint32_t)-1) {
+			DMSG("Failed to find provide phandle");
+			return TEE_ERROR_GENERIC;
+		}
+		break;
+	case DT_DRIVER_I2C:
+	case DT_DRIVER_NOTYPE:
+		break;
+	default:
+		panic("Trying to register unknown type of provider");
 	}
 
 	prv = calloc(1, sizeof(*prv));
@@ -169,12 +192,17 @@ int fdt_get_dt_driver_cells(const void *fdt, int nodeoffset,
 	int len = 0;
 
 	switch (type) {
+	case DT_DRIVER_ADC:
+		cells_name = "#io-channel-cells";
+		break;
 	case DT_DRIVER_CLK:
 		cells_name = "#clock-cells";
 		break;
 	case DT_DRIVER_RSTCTRL:
 		cells_name = "#reset-cells";
 		break;
+	case DT_DRIVER_PINCTRL:
+		return 0;
 	default:
 		panic();
 	}
@@ -262,7 +290,7 @@ void *dt_driver_device_from_node_idx_prop(const char *prop_name,
 	if (!prop) {
 		DMSG("Property %s missing in node %s", prop_name,
 		     fdt_get_name(fdt, nodeoffset, NULL));
-		*res = TEE_ERROR_GENERIC;
+		*res = TEE_ERROR_ITEM_NOT_FOUND;
 		return NULL;
 	}
 
@@ -294,8 +322,23 @@ void *dt_driver_device_from_node_idx_prop(const char *prop_name,
 		return device_from_provider_prop(prv, prop + idx32, res);
 	}
 
-	*res = TEE_ERROR_GENERIC;
+	*res = TEE_ERROR_ITEM_NOT_FOUND;
 	return NULL;
+}
+
+void *dt_driver_device_from_node(int nodeoffset, enum dt_driver_type type,
+				    TEE_Result *res)
+{
+	struct dt_driver_provider *prv = NULL;
+
+	prv = dt_driver_get_provider_by_node(nodeoffset, type);
+	if (!prv) {
+		/* No provider registered yet */
+		*res = TEE_ERROR_DEFER_DRIVER_INIT;
+		return NULL;
+	}
+
+	return prv->get_of_device(NULL, prv->priv_data, res);
 }
 
 static void __maybe_unused print_probe_list(const void *fdt __maybe_unused)
@@ -575,8 +618,8 @@ static TEE_Result add_node_to_probe(const void *fdt, int node,
  *	  TEE_ERROR_ITEM_NOT_FOUND if no matching driver
  *	  TEE_ERROR_OUT_OF_MEMORY if heap is exhausted
  */
-static TEE_Result add_probe_node_by_compat(const void *fdt, int node,
-					   const char *compat)
+TEE_Result add_probe_node_by_compat(const void *fdt, int node,
+				    const char *compat)
 {
 	TEE_Result res = TEE_ERROR_ITEM_NOT_FOUND;
 	const struct dt_driver *dt_drv = NULL;
@@ -618,7 +661,6 @@ TEE_Result dt_driver_maybe_add_probe_node(const void *fdt, int node)
 	int len = 0;
 	int count = 0;
 	const char *compat = NULL;
-	TEE_Result res = TEE_ERROR_GENERIC;
 
 	if (_fdt_get_status(fdt, node) == DT_STATUS_DISABLED)
 		return TEE_SUCCESS;
@@ -631,11 +673,8 @@ TEE_Result dt_driver_maybe_add_probe_node(const void *fdt, int node)
 		compat = fdt_stringlist_get(fdt, node, "compatible", idx, &len);
 		assert(compat && len > 0);
 
-		res = add_probe_node_by_compat(fdt, node, compat);
 
-		/* Stop lookup if something was found */
-		if (res != TEE_ERROR_ITEM_NOT_FOUND)
-			return res;
+		add_probe_node_by_compat(fdt, node, compat);
 	}
 
 	return TEE_SUCCESS;

@@ -28,6 +28,7 @@
 #include <tee/tee_obj.h>
 #include <tee/tee_svc_cryp.h>
 #include <tee/tee_svc_storage.h>
+#include <tee/tui.h>
 #include <trace.h>
 #include <types_ext.h>
 #include <user_ta_header.h>
@@ -295,6 +296,7 @@ static void destroy_session(struct tee_ta_session *s,
 	}
 #endif
 
+	tui_close_session(&s->ts_sess);
 	tee_ta_unlink_session(s, open_sessions);
 #if defined(CFG_TA_GPROF_SUPPORT)
 	free(s->ts_sess.sbuf);
@@ -763,7 +765,7 @@ TEE_Result tee_ta_open_session(TEE_ErrorOrigin *err,
 		tee_ta_close_session(s, open_sessions, KERN_IDENTITY);
 
 	if (res != TEE_SUCCESS)
-		EMSG("Failed. Return error 0x%x", res);
+		EMSG("Failed. TA %pUl Return error 0x%x", uuid, res);
 
 	return res;
 }

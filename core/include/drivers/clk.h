@@ -8,11 +8,15 @@
 
 #include <kernel/refcount.h>
 #include <stdint.h>
+#include <sys/queue.h>
 #include <tee_api_types.h>
 
 /* Flags for clock */
 #define CLK_SET_RATE_GATE	BIT(0) /* must be gated across rate change */
 #define CLK_SET_PARENT_GATE	BIT(1) /* must be gated across re-parent */
+#define CLK_OPS_PARENT_ENABLE	BIT(2) /* parent need enable during re-parent */
+#define CLK_SET_RATE_PARENT	BIT(3) /* propagate rate change up one level */
+#define CLK_SET_RATE_UNGATE	BIT(4) /* clock needs to run to set rate */
 
 /**
  * struct clk - Clock structure
@@ -28,6 +32,8 @@
  * @parents: Array of possible parents of the clock
  */
 struct clk {
+	STAILQ_ENTRY(clk) link;
+
 	const char *name;
 	void *priv;
 	const struct clk_ops *ops;
@@ -40,8 +46,37 @@ struct clk {
 };
 
 /**
+ * struct clk_rate_request
+ *
+ * @rate:		Requested clock rate. This field will be adjusted by
+ *			clock drivers according to hardware capabilities.
+ * @best_parent_rate:	The best parent rate a parent can provide to fulfill the
+ *			requested constraints.
+ * @best_parent:	The most appropriate parent clock that fulfills the
+ *			requested constraints.
+ *
+ */
+struct clk_rate_request {
+	unsigned long rate;
+	unsigned long best_parent_rate;
+	struct clk *best_parent;
+};
+
+/**
+ * struct clk_duty - Struture encoding the duty cycle ratio of a clock
+ *
+ * @num:	Numerator of the duty cycle ratio
+ * @den:	Denominator of the duty cycle ratio
+ */
+struct clk_duty {
+	unsigned int num;
+	unsigned int den;
+};
+
+/**
  * struct clk_ops
  *
+ * @is_enabled: Get effective state of the clock (on / off)
  * @enable: Enable the clock
  * @disable: Disable the clock
  * @set_parent: Set the clock parent based on index
@@ -50,6 +85,7 @@ struct clk {
  * @get_rate: Get the clock rate
  */
 struct clk_ops {
+	bool (*is_enabled)(struct clk *clk);
 	TEE_Result (*enable)(struct clk *clk);
 	void (*disable)(struct clk *clk);
 	TEE_Result (*set_parent)(struct clk *clk, size_t index);
@@ -58,6 +94,13 @@ struct clk_ops {
 			       unsigned long parent_rate);
 	unsigned long (*get_rate)(struct clk *clk,
 				  unsigned long parent_rate);
+	TEE_Result (*get_duty_cycle)(struct clk *clk,
+				     struct clk_duty *duty);
+	unsigned long (*round_rate)(struct clk *clk,
+				    unsigned long rate,
+				    unsigned long parent_rate);
+	TEE_Result (*determine_rate)(struct clk *clk,
+				     struct clk_rate_request *req);
 };
 
 /**
@@ -177,5 +220,36 @@ struct clk *clk_get_parent_by_index(struct clk *clk, size_t pidx);
  * Return a TEE_Result compliant value
  */
 TEE_Result clk_set_parent(struct clk *clk, struct clk *parent);
+
+/**
+ * clk_reparent - Update clock parent
+ *
+ * This function mandates that clock framework is locked against
+ * concurrent accesses on clock tree.
+ *
+ * @clk: Clock for which the parent should be set
+ * @parent: Parent clock to set
+ * Return a TEE_Result compliant value
+ */
+TEE_Result clk_reparent(struct clk *clk, struct clk *parent);
+
+/**
+ * clk_get_duty_cyle - Get clock duty cycle
+ *
+ * @clk: Clock for which the duty cycle is requested
+ * @duty: Output duty cycle info
+ * Return a TEE_Result compliant value
+ */
+TEE_Result clk_get_duty_cyle(struct clk *clk, struct clk_duty *duty);
+
+/**
+ * clk_round_rate - Round the given rate for a clock
+ * @clk: Clock for which the round rate is need
+ * @rate: The rate which is to be rounded
+ * Returns the closest rate actually supported by the clock.
+ */
+unsigned long clk_round_rate(struct clk *clk, unsigned long rate);
+
+void clk_summary(void);
 
 #endif /* __DRIVERS_CLK_H */
