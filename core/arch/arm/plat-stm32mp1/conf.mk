@@ -1,6 +1,7 @@
 # 1GB and 512MB DDR targets do not locate secure DDR at the same place.
 flavor_dts_file-157A_DHCOR_AVENGER96 = stm32mp157a-dhcor-avenger96.dts
 flavor_dts_file-157A_DK1 = stm32mp157a-dk1.dts
+flavor_dts_file-157A_SOM = stm32mp157a-som.dts
 flavor_dts_file-157A_ED1 = stm32mp157a-ed1.dts
 flavor_dts_file-157A_EV1 = stm32mp157a-ev1.dts
 flavor_dts_file-157C_DHCOM_PDK2 = stm32mp157c-dhcom-pdk2.dts
@@ -31,6 +32,7 @@ flavorlist-cryp-1G = $(flavor_dts_file-157C_DHCOM_PDK2) \
 
 flavorlist-no_cryp-1G = $(flavor_dts_file-157A_ED1) \
 			$(flavor_dts_file-157A_EV1) \
+		        $(flavor_dts_file-157A_SOM) \
 			$(flavor_dts_file-157A_DHCOR_AVENGER96) \
 			$(flavor_dts_file-157D_ED1) \
 			$(flavor_dts_file-157D_EV1)
@@ -48,6 +50,7 @@ flavorlist-1G = $(flavorlist-cryp-1G) \
 
 flavorlist-MP15 = $(flavor_dts_file-157A_DHCOR_AVENGER96) \
 		  $(flavor_dts_file-157A_DK1) \
+		  $(flavor_dts_file-157A_SOM) \
 		  $(flavor_dts_file-157A_ED1) \
 		  $(flavor_dts_file-157A_EV1) \
 		  $(flavor_dts_file-157C_DHCOM_PDK2) \
