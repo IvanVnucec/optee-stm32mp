@@ -325,7 +325,7 @@
 
 		pll4_cfg1: pll4_cfg1 {
 			st,pll_vco = <&pll4_vco_600Mhz>;
-			st,pll_div_pqr = <11 11 11>;
+			st,pll_div_pqr = <23 23 23>;
 		};
 	};
 };
