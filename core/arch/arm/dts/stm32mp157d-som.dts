@@ -338,6 +338,19 @@
 	status = "okay";
 };
 
+&sdmmc1_b4_pins_a {
+        pins1 {
+                slew-rate = <0>;
+                bias-pull-up;
+                /delete-property/bias-disable;
+        };
+        pins2 {
+                slew-rate = <0>;
+                bias-pull-up;
+                /delete-property/bias-disable;
+        };
+};
+
 &sdmmc1 {
 	pinctrl-names = "default", "opendrain", "sleep";
 	pinctrl-0 = <&sdmmc1_b4_pins_a>;
