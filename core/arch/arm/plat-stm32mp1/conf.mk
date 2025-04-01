@@ -2,6 +2,7 @@
 flavor_dts_file-157A_DHCOR_AVENGER96 = stm32mp157a-dhcor-avenger96.dts
 flavor_dts_file-157A_DK1 = stm32mp157a-dk1.dts
 flavor_dts_file-157D_BSB = stm32mp157d-bsb.dts
+flavor_dts_file-157_SOMIC = stm32mp157-somic.dts
 flavor_dts_file-157A_ED1 = stm32mp157a-ed1.dts
 flavor_dts_file-157A_EV1 = stm32mp157a-ev1.dts
 flavor_dts_file-157C_DHCOM_PDK2 = stm32mp157c-dhcom-pdk2.dts
@@ -22,7 +23,8 @@ flavorlist-cryp-512M = $(flavor_dts_file-157C_DK2) \
 		       $(flavor_dts_file-135F_DK)
 
 flavorlist-no_cryp-512M = $(flavor_dts_file-157A_DK1) \
-			  $(flavor_dts_file-157D_DK1)
+			  $(flavor_dts_file-157D_DK1) \
+			  $(flavor_dts_file-157_SOMIC)
 
 flavorlist-cryp-1G = $(flavor_dts_file-157C_DHCOM_PDK2) \
 		     $(flavor_dts_file-157C_ED1) \
@@ -50,6 +52,7 @@ flavorlist-1G = $(flavorlist-cryp-1G) \
 
 flavorlist-MP15 = $(flavor_dts_file-157A_DHCOR_AVENGER96) \
 		  $(flavor_dts_file-157A_DK1) \
+		  $(flavor_dts_file-157_SOMIC) \
 		  $(flavor_dts_file-157D_BSB) \
 		  $(flavor_dts_file-157A_ED1) \
 		  $(flavor_dts_file-157A_EV1) \
