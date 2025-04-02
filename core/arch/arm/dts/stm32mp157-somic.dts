@@ -11,13 +11,13 @@
 #include <dt-bindings/soc/stm32mp15-etzpc.h>
 
 #include "stm32mp157.dtsi"
-#include "stm32mp15xd.dtsi"
+#include "stm32mp15xa.dtsi"
 #include "stm32mp15-pinctrl.dtsi"
 #include "stm32mp15xxaa-pinctrl.dtsi"
 
 / {
 	model = "STM32MP157 SOMIC";
-	compatible = "st,stm32mp157d-ed1", "st,stm32mp157";
+	compatible = "st,stm32mp157-somic", "st,stm32mp157d-ed1", "st,stm32mp157";
 
 	aliases {
 		serial0 = &uart4;
