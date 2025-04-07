@@ -156,10 +156,6 @@
 	};
 };
 
-&clk_hse {
-	st,digbypass;
-};
-
 &cpu0{
 	cpu-supply = <&vddcore>;
 };
