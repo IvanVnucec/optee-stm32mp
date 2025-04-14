@@ -284,9 +284,10 @@
 			frac = <0x1a04>;
 		};
 
-		pll4_vco_600Mhz: pll4-vco-600hz {
+		pll4_vco_750Mhz: pll4-vco-750Mhz {
 			src = <CLK_PLL4_HSE>;
-			divmn = <1 49>;
+			divmn = <1 61>;
+			frac = <0x1000>;
 		};
 	};
 
@@ -316,7 +317,7 @@
 		};
 	};
 
-	/* VCO = 600.0 MHz => P = 50, Q = 50, R = 50 */
+	/* VCO = 750.0 MHz => P = 250, Q = 50, R = 50 */
 	pll4: st,pll@3 {
 		compatible = "st,stm32mp1-pll";
 		reg = <3>;
@@ -324,8 +325,8 @@
 		st,pll = <&pll4_cfg1>;
 
 		pll4_cfg1: pll4_cfg1 {
-			st,pll_vco = <&pll4_vco_600Mhz>;
-			st,pll_div_pqr = <23 23 23>;
+			st,pll_vco = <&pll4_vco_750Mhz>;
+			st,pll_div_pqr = <5 29 29>;
 		};
 	};
 };
